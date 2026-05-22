@@ -1,37 +1,58 @@
 pipeline {
     agent any
 
+    environment {
+        IMAGE_NAME = "singhkpritam/devops-portfolio"
+        IMAGE_TAG = "v1"
+    }
+
     stages {
 
-        stage('Clone Repo') {
+        stage('Checkout Code') {
             steps {
-                git branch: 'main', url: 'https://github.com/singhkpritam/devops-ci-cd-automated-portfolio.git'
+                git branch: 'main',
+                url: 'https://github.com/singhkpritam/devops-ci-cd-automated-portfolio.git'
             }
         }
 
         stage('Build Docker Image') {
             steps {
-                sh 'docker build -t singhkpritam/devops-portfolio:v1 .'
+                sh "docker build -t $IMAGE_NAME:$IMAGE_TAG ."
             }
         }
 
         stage('Docker Login') {
             steps {
-                sh 'echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin'
+                withCredentials([usernamePassword(
+                    credentialsId: 'dockerhub-creds',
+                    usernameVariable: 'DOCKER_USER',
+                    passwordVariable: 'DOCKER_PASS'
+                )]) {
+                    sh 'echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin'
+                }
             }
         }
 
-        stage('Push Image') {
+        stage('Push Docker Image') {
             steps {
-                sh 'docker push singhkpritam/devops-portfolio:v1'
+                sh "docker push $IMAGE_NAME:$IMAGE_TAG"
             }
         }
 
         stage('Deploy to Kubernetes') {
             steps {
-                sh 'kubectl apply -f deployment.yaml'
-                sh 'kubectl apply -f service.yaml'
+                sh "kubectl apply -f deployment.yaml"
+                sh "kubectl apply -f service.yaml"
             }
+        }
+    }
+
+    post {
+        success {
+            echo "Pipeline Successfully Completed!"
+        }
+        failure {
+            echo "Pipeline Failed - Check Logs"
         }
     }
 }
