@@ -3,7 +3,7 @@ pipeline {
 
     environment {
         IMAGE_NAME = "singhkpritam/devops-portfolio"
-        IMAGE_TAG = "v1"
+        IMAGE_TAG = "${BUILD_NUMBER}"
     }
 
     stages {
@@ -41,7 +41,11 @@ pipeline {
 
         stage('Deploy to Kubernetes') {
             steps {
-                sh "kubectl apply -f deployment.yaml"
+                sh "kubectl set image deployment/devops-portfolio-deployment \
+                devops-portfolio-container=$IMAGE_NAME:$IMAGE_TAG"
+
+                sh "kubectl rollout status deployment/devops-portfolio-deployment"
+
                 sh "kubectl apply -f service.yaml"
             }
         }
@@ -49,10 +53,10 @@ pipeline {
 
     post {
         success {
-            echo "Pipeline Successfully Completed!"
+            echo "✅ Pipeline Successfully Completed!"
         }
         failure {
-            echo "Pipeline Failed - Check Logs"
+            echo "❌ Pipeline Failed - Check Logs"
         }
     }
 }

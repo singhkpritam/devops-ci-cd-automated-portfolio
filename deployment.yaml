@@ -15,5 +15,6 @@ spec:
       containers:
       - name: devops-portfolio-container
         image: singhkpritam/devops-portfolio:v1
+        imagePullPolicy: Always   # 🔥 ADD THIS
         ports:
         - containerPort: 80
